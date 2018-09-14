@@ -1,15 +1,48 @@
 <html>
 <head>
 <title>Transaction Log</title>
+<script src="lib/diff.js"></script>
 <script>
 
 var prevText = ""
 var textElement1
+var logElement
+
+
+function createDiff(prev, curr) {
+	// using the jsdiff library
+	// source: https://github.com/kpdecker/jsdiff/
+
+	var res = []
+	var diff = JsDiff.diffChars(prev, curr)
+
+	diff.forEach(function(section) {
+		var block = document.createElement("span")
+		if (section.added) {
+			block.className = "added"
+		} else if (section.removed) {
+			block.className = "removed"
+		}
+
+		block.innerText = section.value
+		res.push(block)
+	})
+
+	return res
+}
 
 function processUpdate() { 
     var updatedText = textElement1.value
 
+	diffSpans = createDiff(prevText, updatedText)
+
 	// add element with diff between prev and updated text
+	var logEntry = document.createElement("p")
+	diffSpans.forEach(function(span) {
+		logEntry.appendChild(span)
+	})
+
+	logElement.appendChild(logEntry)
 
 	prevText = updatedText
 }
@@ -17,6 +50,8 @@ function processUpdate() {
 document.addEventListener("DOMContentLoaded", function() {
 	var buttonElement = document.getElementById("update-button")
 	textElement1 = document.getElementById("textarea-1")
+	logElement = document.getElementById("log")
+
 	buttonElement.addEventListener("click", processUpdate, false)
 });
 
@@ -26,6 +61,9 @@ document.addEventListener("DOMContentLoaded", function() {
 <div class="player-1">
 	<textarea id="textarea-1"></textarea>
 	<p><button id="update-button">Update</button></p>
+</div>
+<div id="log">
+
 </div>
 </body>	
 </html>
