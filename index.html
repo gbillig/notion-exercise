@@ -1,6 +1,22 @@
 <html>
 <head>
 <title>Transaction Log</title>
+<style>
+body {
+	font-family: Helvetica;
+}
+.added {
+	color: dodgerblue;
+}
+.removed {
+	color: gray;
+	text-decoration: line-through;
+}
+textarea {
+	min-width: 30em;
+	min-height: 10em;
+}
+</style>
 <script src="lib/diff.js"></script>
 <script>
 
@@ -41,6 +57,7 @@ function processUpdate() {
 	diffSpans.forEach(function(span) {
 		logEntry.appendChild(span)
 	})
+	logEntry.appendChild(document.createTextNode(String.fromCharCode(160)))
 
 	logElement.appendChild(logEntry)
 
@@ -62,8 +79,6 @@ document.addEventListener("DOMContentLoaded", function() {
 	<textarea id="textarea-1"></textarea>
 	<p><button id="update-button">Update</button></p>
 </div>
-<div id="log">
-
-</div>
+<div id="log"></div>
 </body>	
 </html>
