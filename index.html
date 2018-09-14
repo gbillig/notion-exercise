@@ -1,11 +1,31 @@
 <html>
 <head>
 <title>Transaction Log</title>
+<script>
+
+var prevText = ""
+var textElement1
+
+function processUpdate() { 
+    var updatedText = textElement1.value
+
+	// add element with diff between prev and updated text
+
+	prevText = updatedText
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+	var buttonElement = document.getElementById("update-button")
+	textElement1 = document.getElementById("textarea-1")
+	buttonElement.addEventListener("click", processUpdate, false)
+});
+
+</script>
 </head>
 <body>
 <div class="player-1">
-	<textarea></textarea>
-	<p><button>Update</button></p>
+	<textarea id="textarea-1"></textarea>
+	<p><button id="update-button">Update</button></p>
 </div>
 </body>	
 </html>
