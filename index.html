@@ -21,7 +21,7 @@ textarea {
 <script src="lib/diff.js"></script>
 <script>
 
-var prevText = "",
+var currText = "",
 	textElement1,
 	logElement,
 	opLog = []
@@ -54,8 +54,22 @@ function opTransform(prevOp, currOp) {
 
 }
 
+function adjustOps() {
+	for (var i = 1; i < opLog.length; i++) {
+		for (var j = 0; j < i; j++) {
+			opTransform(opLog[j], opLog[i])
+		}
+	}
+}
+
+function applyOps() {
+	opLog.forEach(function(op) {
+
+	})
+}
+
 function logKeystroke(event, carotPos, user) {
-	console.log([event.key, carotPos, user])
+	// console.log([event.key, carotPos, user])
 	var op = new Object()
 	op.user = user
 
@@ -72,20 +86,11 @@ function logKeystroke(event, carotPos, user) {
 }
 
 function processUpdate() { 
-    var updatedText = textElement1.value
+	adjustOps()
+	applyOps()
 
-	diffSpans = createDiff(prevText, updatedText)
-
-	// add element with diff between prev and updated text
-	var logEntry = document.createElement("p")
-	diffSpans.forEach(function(span) {
-		logEntry.appendChild(span)
-	})
-	logEntry.appendChild(document.createTextNode(String.fromCharCode(160)))
-
-	logElement.appendChild(logEntry)
-
-	prevText = updatedText
+	textElement1.value = currText
+	textElement2.value = currText
 }
 
 document.addEventListener("DOMContentLoaded", function() {
