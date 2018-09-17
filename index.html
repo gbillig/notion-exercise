@@ -50,7 +50,7 @@ function createDiff(prev, curr) {
 	return res
 }
 
-function opTransform(prevOp, currOp) {
+function opTransform(prevOp, currOp, opIndex) {
 	if (prevOp.user === currOp.user) {
 		return
 	}
@@ -58,21 +58,47 @@ function opTransform(prevOp, currOp) {
 	// unsure what the accepted best practice for formating large conditionals
 	if (prevOp.type === "ins" &&
 		currOp.type === "ins" &&
-		prevOp.pos <= currOp.pos) {
-		currOp.pos += 1
+		prevOp.start <= currOp.start) {
+		currOp.start += 1
 	} else if (prevOp.type === "del" &&
-		currOp.type === "ins" &&
-		prevOp.pos < currOp.pos) {
-		currOp.pos -= 1
+			   currOp.type === "ins" &&
+			   prevOp.start < currOp.start) {
+		if (prevOp.end > currOp.start) {
+			currOp.start -= currOp.start - prevOp.start
+		} else {
+			currOp.start -= prevOp.end - prevOp.start
+		}
 	} else if (prevOp.type === "ins" &&
-		currOp.type === "del" &&
-		prevOp.pos <= currOp.pos) {
-		currOp.pos += 1
+			   currOp.type === "del" &&
+			   prevOp.pos <= currOp.pos) {
+		if (prevOp.start <= currOp.start) {
+			currOp.start += 1
+			currOp.end += 1
+		} else if (prevOp.start > currOp.start) {
+			var newOp = new Object()
+			newOp.type = "del"
+			newOp.user = currOp.user
+			newOp.start = prevOp.start + 1
+			newOp.end = currOp.end + 1
+			opLog.splice(opIndex, 0, newOp)
+		}
 	} else if (prevOp.type === "del" && currOp.type === "del") {
-		if (prevOp.pos < currOp.pos) {
-			currOp.pos -= 1
-		} else if (prevOp.pos === currOp.pos) {
-			// TODO: handle deletion of same char
+		if (prevOp.end <= currOp.start) {
+			currOp.start -= prevOp.end - prevOp.start
+			currOp.end -= prevOp.end - prevOp.start
+		} else if (prevOp.start <= currOp.start && prevOp.end > currOp.start) {
+			currOp.start = prevOp.start
+			currOp.end -= prevOp.end - prevOp.start
+
+			if (currOp.end < currOp.start) {
+				currOp.end = currOp.start
+			}
+		} else if (currOp.start <= prevOp.start && currOp.end > prevOp.start) {
+			if (currOp.end <= prevOp.end) {
+				currOp.end -= currOp.end - prevOp.start
+			} else {
+				currOp.end -= prevOp.end - prevOp.start
+			}
 		}
 	}
 }
@@ -80,7 +106,7 @@ function opTransform(prevOp, currOp) {
 function adjustOps() {
 	for (var i = 1; i < opLog.length; i++) {
 		for (var j = 0; j < i; j++) {
-			opTransform(opLog[j], opLog[i])
+			opTransform(opLog[j], opLog[i], i)
 		}
 	}
 }
@@ -88,26 +114,55 @@ function adjustOps() {
 function applyOps() {
 	opLog.forEach(function(op) {
 		if (op.type === "ins") {
-			currText = currText.slice(0, op.pos) + op.char + currText.slice(op.pos)
+			currText = currText.slice(0, op.start) + op.data + currText.slice(op.start)
 		} else if (op.type === "del") {
-			currText = currText.slice(0, op.pos) + currText.slice(op.pos + 1)
+			currText = currText.slice(0, op.start) + currText.slice(op.end)
 		}
 	})
 }
 
-function logKeystroke(event, carotPos, user) {
-	// console.log([event.key, carotPos, user])
+function logKeystroke(event) {
+	// console.log([event.data, event.inputType, event.cancelable])
+
+	var target = event.target
+	var user = target.id === "textarea-1" ? 0 : 1
+	var carotStart = target.selectionStart
+	var carotEnd = target.selectionEnd
+
 	var op = new Object()
 	op.user = user
 
-	if (event.key === "Delete" || event.key === "Backspace") {
-		op.type = "del"
-		op.pos = carotPos
-		opLog.push(op)
-	} else if (event.key.length === 1) {
+	if (event.inputType === "insertText") {
+		if (carotStart != carotEnd) {
+			var selectionDelOp = new Object()
+			selectionDelOp.user = user
+			selectionDelOp.type = "del"
+			selectionDelOp.start = carotStart
+			selectionDelOp.end = carotEnd
+			opLog.push(selectionDelOp)
+		}
+
 		op.type = "ins"
-		op.pos = carotPos - 1
-		op.char = event.key
+		op.start = carotStart
+		op.data = event.data
+		opLog.push(op)
+	} else if (event.inputType === "deleteContentBackward" ||
+			   event.inputType === "deleteContentForward") {
+		op.type = "del"
+
+		if (carotStart != carotEnd) {
+			op.start = carotStart
+			op.end = carotEnd
+		} else {
+			if (event.inputType === "deleteContentBackward") {
+				op.start = carotStart - 1
+				op.end = carotEnd
+			} else if (event.inputType === "deleteContentForward") {
+				op.start = carotStart
+				op.end = carotEnd + 1
+			}
+		}
+
 		opLog.push(op)
 	}
 }
@@ -129,19 +184,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	buttonElement.addEventListener("click", processUpdate, false)
 
-	/* known limitations:
-	 *  - does not handle repeat keypress
-     *  - does not handle selection deletions
-     *  - keystrokes with modifiers aren't ignored
-	 */
-
-	textElement1.addEventListener("keyup", function(e) {
-		logKeystroke(e, this.selectionStart, 0)
-	}, false)
-
-	textElement2.addEventListener("keyup", function(e) {
-		logKeystroke(e, this.selectionStart, 1)
-	}, false)
+	textElement1.addEventListener("beforeinput", logKeystroke, false)
+	textElement2.addEventListener("beforeinput", logKeystroke, false)
 });
 
 </script>
