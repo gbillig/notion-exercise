@@ -21,9 +21,11 @@ textarea {
 <script src="lib/diff.js"></script>
 <script>
 
-var prevText = ""
-var textElement1
-var logElement
+var prevText = "",
+	textElement1,
+	logElement,
+	opLog = []
+
 
 
 function createDiff(prev, curr) {
@@ -48,8 +50,25 @@ function createDiff(prev, curr) {
 	return res
 }
 
-function logKeystroke(event, carotIndex, user) {
-	console.log([event.keyCode, carotIndex, user])
+function opTransform(prevOp, currOp) {
+
+}
+
+function logKeystroke(event, carotPos, user) {
+	console.log([event.key, carotPos, user])
+	var op = new Object()
+	op.user = user
+
+	if (event.key === "Delete" || event.key === "Backspace") {
+		op.type = "del"
+		op.pos = carotPos
+		opLog.push(op)
+	} else if (event.key.length === 1) {
+		op.type = "ins"
+		op.pos = carotPos - 1
+		op.char = event.key
+		opLog.push(op)
+	}
 }
 
 function processUpdate() { 
@@ -77,12 +96,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	buttonElement.addEventListener("click", processUpdate, false)
 
+	/* known limitations:
+	 *  - does not handle repeat keypress
+     *  - does not handle selection deletions
+	 */
+
 	textElement1.addEventListener("keyup", function(e) {
-		logKeystroke(e, textElement1.selectionStart, 0)
+		logKeystroke(e, this.selectionStart, 0)
 	}, false)
 
 	textElement2.addEventListener("keyup", function(e) {
-		logKeystroke(e, textElement2.selectionStart, 1)
+		logKeystroke(e, this.selectionStart, 1)
 	}, false)
 });
 
