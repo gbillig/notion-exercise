@@ -70,7 +70,7 @@ function opTransform(prevOp, currOp, opIndex) {
 		}
 	} else if (prevOp.type === "ins" &&
 			   currOp.type === "del" &&
-			   prevOp.pos <= currOp.pos) {
+			   prevOp.start <= currOp.start) {
 		if (prevOp.start <= currOp.start) {
 			currOp.start += 1
 			currOp.end += 1
@@ -155,7 +155,11 @@ function logKeystroke(event) {
 			op.end = carotEnd
 		} else {
 			if (event.inputType === "deleteContentBackward") {
-				op.start = carotStart - 1
+				if (carotStart > 0) {
+					op.start = carotStart - 1
+				} else {
+					op.start = 0
+				}
 				op.end = carotEnd
 			} else if (event.inputType === "deleteContentForward") {
 				op.start = carotStart
