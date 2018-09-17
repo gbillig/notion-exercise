@@ -15,6 +15,7 @@ body {
 textarea {
 	min-width: 30em;
 	min-height: 10em;
+	margin-right: 30px;
 }
 </style>
 <script src="lib/diff.js"></script>
@@ -47,6 +48,10 @@ function createDiff(prev, curr) {
 	return res
 }
 
+function logKeystroke(event, carotIndex, user) {
+	console.log([event.keyCode, carotIndex, user])
+}
+
 function processUpdate() { 
     var updatedText = textElement1.value
 
@@ -67,9 +72,18 @@ function processUpdate() {
 document.addEventListener("DOMContentLoaded", function() {
 	var buttonElement = document.getElementById("update-button")
 	textElement1 = document.getElementById("textarea-1")
+	textElement2 = document.getElementById("textarea-2")
 	logElement = document.getElementById("log")
 
 	buttonElement.addEventListener("click", processUpdate, false)
+
+	textElement1.addEventListener("keyup", function(e) {
+		logKeystroke(e, textElement1.selectionStart, 0)
+	}, false)
+
+	textElement2.addEventListener("keyup", function(e) {
+		logKeystroke(e, textElement2.selectionStart, 1)
+	}, false)
 });
 
 </script>
@@ -77,6 +91,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <body>
 <div class="player-1">
 	<textarea id="textarea-1"></textarea>
+	<textarea id="textarea-2"></textarea>
 	<p><button id="update-button">Update</button></p>
 </div>
 <div id="log"></div>
