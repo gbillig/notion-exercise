@@ -112,9 +112,30 @@ function opTransform(prevOp, currOp, opIndex) {
 }
 
 function updateState() {
-	state.forEach(function(section) {
-		section.type = "curr"
-	})
+	for (i = state.length - 1; i >= 0; i--) {
+		if (state[i].type === "del") {
+			state.splice(i, 1)
+		} else {
+			state[i].type = "curr"
+		}
+	}
+}
+
+function insertIntoState(value, index) {
+	limit = index
+	for (i = 0; i < limit; i++) {
+		if (state[i].type === "del") {
+			limit += 1
+		}
+	}
+	state.splice(i, 0, value)
+}
+
+function deleteFromState(user, start, end) {
+	for (i = start; i < end; i++) {
+		state[i].type = "del"
+		state[i].user = user
+	}
 }
 
 function adjustOps() {
@@ -129,9 +150,10 @@ function applyOps() {
 	opLog.forEach(function(op) {
 		if (op.type === "ins") {
 			currText = currText.slice(0, op.start) + op.data + currText.slice(op.start)
-			state.splice(op.start, 0, op)
+			insertIntoState(op, op.start)
 		} else if (op.type === "del") {
 			currText = currText.slice(0, op.start) + currText.slice(op.end)
+			deleteFromState(op.user, op.start, op.end)
 		}
 	})
 }
