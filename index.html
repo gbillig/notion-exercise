@@ -32,9 +32,6 @@ var currText = "",
 
 
 function createDiff(prev, curr) {
-	// using the jsdiff library
-	// source: https://github.com/kpdecker/jsdiff/
-
 	var res = []
 
 	state.forEach(function(section) {
@@ -128,13 +125,25 @@ function insertIntoState(value, index) {
 			limit += 1
 		}
 	}
-	state.splice(i, 0, value)
+
+	if (i < state.length &&
+		state[i].type === "del" &&
+		state[i].user === value.user &&
+		state[i].data === value.data) {
+		state[i].type = "curr"
+	} else {
+		state.splice(i, 0, value)
+	}
 }
 
 function deleteFromState(user, start, end) {
-	for (i = start; i < end; i++) {
-		state[i].type = "del"
-		state[i].user = user
+	for (i = end - 1; i >= start; i--) {
+		if (state[i].type === "ins" && state[i].user === user) {
+			state.splice(i, 1)
+		} else {
+			state[i].type = "del"
+			state[i].user = user
+		}
 	}
 }
 
