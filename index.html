@@ -5,12 +5,14 @@
 body {
 	font-family: Helvetica;
 }
-.added {
+.removed {
+	text-decoration: line-through;
+}
+.user-1 {
 	color: dodgerblue;
 }
-.removed {
-	color: gray;
-	text-decoration: line-through;
+.user-2 {
+	color: goldenrod;
 }
 textarea {
 	min-width: 30em;
@@ -24,7 +26,8 @@ textarea {
 var currText = "",
 	textElement1,
 	logElement,
-	opLog = []
+	opLog = [],
+	state = []
 
 
 
@@ -33,17 +36,22 @@ function createDiff(prev, curr) {
 	// source: https://github.com/kpdecker/jsdiff/
 
 	var res = []
-	var diff = JsDiff.diffChars(prev, curr)
 
-	diff.forEach(function(section) {
+	state.forEach(function(section) {
 		var block = document.createElement("span")
-		if (section.added) {
-			block.className = "added"
-		} else if (section.removed) {
-			block.className = "removed"
+		if (section.type != "curr") {
+			if (section.user === 0) {
+				block.className += "user-1 "
+			} else if (section.user === 1) {
+				block.className += "user-2 "
+			}
+
+			if (section.type === "del") {
+				block.className += "removed "
+			}
 		}
 
-		block.innerText = section.value
+		block.innerText = section.data
 		res.push(block)
 	})
 
@@ -103,6 +111,12 @@ function opTransform(prevOp, currOp, opIndex) {
 	}
 }
 
+function updateState() {
+	state.forEach(function(section) {
+		section.type = "curr"
+	})
+}
+
 function adjustOps() {
 	for (var i = 1; i < opLog.length; i++) {
 		for (var j = 0; j < i; j++) {
@@ -115,6 +129,7 @@ function applyOps() {
 	opLog.forEach(function(op) {
 		if (op.type === "ins") {
 			currText = currText.slice(0, op.start) + op.data + currText.slice(op.start)
+			state.splice(op.start, 0, op)
 		} else if (op.type === "del") {
 			currText = currText.slice(0, op.start) + currText.slice(op.end)
 		}
@@ -171,13 +186,23 @@ function logKeystroke(event) {
 	}
 }
 
-function processUpdate() { 
+function processUpdate() {
+	updateState() 
 	adjustOps()
 	applyOps()
-	opLog = []
+
+	var diffSpans = createDiff()
+
+	var logEntry = document.createElement("p")
+	diffSpans.forEach(function(span) {
+		logEntry.appendChild(span)
+	})
+	logEntry.appendChild(document.createTextNode(String.fromCharCode(160)))
+	logElement.appendChild(logEntry)
 
 	textElement1.value = currText
 	textElement2.value = currText
+	opLog = []
 }
 
 document.addEventListener("DOMContentLoaded", function() {
