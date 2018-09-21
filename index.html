@@ -81,7 +81,7 @@ function opTransform(prevOp, currOp, opIndex) {
 }
 
 function updateState() {
-	for (i = state.length - 1; i >= 0; i--) {
+	for (var i = state.length - 1; i >= 0; i--) {
 		if (state[i].type === "del") {
 			state.splice(i, 1)
 		} else {
@@ -92,7 +92,7 @@ function updateState() {
 
 function insertIntoState(value, index) {
 	limit = index
-	for (i = 0; i < limit; i++) {
+	for (var i = 0; i < limit; i++) {
 		if (state[i].type === "del") {
 			limit += 1
 		}
@@ -109,7 +109,7 @@ function insertIntoState(value, index) {
 }
 
 function deleteFromState(user, start, end) {
-	for (i = end - 1; i >= start; i--) {
+	for (var i = end - 1; i >= start; i--) {
 		if (state[i].type === "ins" && state[i].user === user) {
 			state.splice(i, 1)
 		} else {
@@ -118,6 +118,55 @@ function deleteFromState(user, start, end) {
 		}
 	}
 }
+
+function removeDuplicateDeleteOp() {
+	for (var i = 0; i < opLog.length; i++) {
+		if (opLog[i].type === "del") {
+			opLog[i].rel_pos = opLog[i].pos
+		}
+	}
+
+	for (var i = 1; i < opLog.length; i++) {
+		for (var j = 0; j < i; j++) {
+			var prevOp = opLog[j]
+			var currOp = opLog[i]
+
+			if (currOp.type != "del" || 
+				prevOp.user != currOp.user) {
+				continue
+			}
+
+			if (prevOp.type === "ins" &&
+				prevOp.pos < currOp.pos) {
+				currOp.rel_pos -= 1
+			} else if (prevOp.type === "del" &&
+					   prevOp.pos <= currOp.pos) {
+				currOp.rel_pos += 1
+			}
+		}
+	}
+
+	var deleted = new Array(currText.length).fill(0);
+
+	for (var i = 0; i < opLog.length - 1; i++) {
+		if (opLog[i].type != "del") {
+			continue
+		}
+
+		for (var j = i + 1; j < opLog.length; j++) {
+			if (opLog[j].type != "del") {
+				continue
+			}
+
+			if (opLog[i].rel_pos === opLog[j].rel_pos &&
+				!deleted[opLog[i].rel_pos]) {
+				opLog.splice(j, 1)
+				deleted[opLog[i].rel_pos] = 1
+			}
+		}
+	}
+}
+
 
 function adjustOps() {
 	for (var i = 1; i < opLog.length; i++) {
@@ -149,7 +198,7 @@ function logKeystroke(event) {
 
 	if (event.inputType === "insertText") {
 		if (carotStart != carotEnd) {
-			for (i = carotEnd - 1; i >= carotStart; i--) {
+			for (var i = carotEnd - 1; i >= carotStart; i--) {
 				var op = new Object()
 				op.user = user
 				op.type = "del"
@@ -168,7 +217,7 @@ function logKeystroke(event) {
 	} else if (event.inputType === "deleteContentBackward" ||
 			   event.inputType === "deleteContentForward") {
 		if (carotStart != carotEnd) {
-			for (i = carotEnd - 1; i >= carotStart; i--) {
+			for (var i = carotEnd - 1; i >= carotStart; i--) {
 				var op = new Object()
 				op.user = user
 				op.type = "del"
@@ -184,7 +233,7 @@ function logKeystroke(event) {
 				if (carotStart > 0) {
 					op.pos = carotStart - 1
 				} else {
-					op.pos = 0
+					return
 				}
 			} else if (event.inputType === "deleteContentForward") {
 				op.pos = carotStart
@@ -197,6 +246,7 @@ function logKeystroke(event) {
 }
 
 function processUpdate() {
+	removeDuplicateDeleteOp()
 	updateState() 
 	adjustOps()
 	applyOps()
