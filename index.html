@@ -131,7 +131,7 @@ function removeDuplicateDeleteOp() {
 			var prevOp = opLog[j]
 			var currOp = opLog[i]
 
-			if (currOp.type != "del" || 
+			if (currOp.type != "del" ||
 				prevOp.user != currOp.user) {
 				continue
 			}
@@ -196,7 +196,7 @@ function logKeystroke(event) {
 	var carotStart = target.selectionStart
 	var carotEnd = target.selectionEnd
 
-	if (event.inputType === "insertText") {
+	if (event.inputType.startsWith("insert")) {
 		if (carotStart != carotEnd) {
 			for (var i = carotEnd - 1; i >= carotStart; i--) {
 				var op = new Object()
@@ -207,13 +207,14 @@ function logKeystroke(event) {
 			}
 		}
 
-		var op = new Object()
-		op.user = user
-		op.type = "ins"
-		op.pos = carotStart
-		op.data = event.data
-		opLog.push(op)
-
+		for (var i = event.data.length - 1; i >= 0; i--) {
+			var op = new Object()
+			op.user = user
+			op.type = "ins"
+			op.pos = carotStart
+			op.data = event.data[i]
+			opLog.push(op)
+		}
 	} else if (event.inputType === "deleteContentBackward" ||
 			   event.inputType === "deleteContentForward") {
 		if (carotStart != carotEnd) {
@@ -241,7 +242,6 @@ function logKeystroke(event) {
 
 			opLog.push(op)
 		}
-
 	}
 }
 
