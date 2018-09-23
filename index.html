@@ -55,7 +55,8 @@ function createDiff(prev, curr) {
 }
 
 function opTransform(prevOp, currOp, opIndex) {
-	if (prevOp.user === currOp.user) {
+	if (prevOp.user === currOp.user ||
+		prevOp.ignore) {
 		return
 	}
 
@@ -160,6 +161,7 @@ function removeDuplicateDeleteOp() {
 			if (opLog[i].rel_pos === opLog[j].rel_pos &&
 				opLog[i].user != opLog[j].user &&
 				!deleted[opLog[i].rel_pos]) {
+				opLog[i].ignore = true
 				opLog.splice(j, 1)
 				deleted[opLog[i].rel_pos] = 1
 			}
