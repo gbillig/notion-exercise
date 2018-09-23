@@ -30,7 +30,7 @@ var currText = "",
 
 
 
-function createDiff(prev, curr) {
+function createDiff() {
 	var res = []
 
 	state.forEach(function(section) {
@@ -54,7 +54,7 @@ function createDiff(prev, curr) {
 	return res
 }
 
-function opTransform(prevOp, currOp, opIndex) {
+function opTransform(prevOp, currOp) {
 	if (prevOp.user === currOp.user ||
 		prevOp.ignore) {
 		return
@@ -108,14 +108,12 @@ function insertIntoState(value, index) {
 	}
 }
 
-function deleteFromState(user, start, end) {
-	for (var i = end - 1; i >= start; i--) {
-		if (state[i].type === "ins" && state[i].user === user) {
-			state.splice(i, 1)
-		} else {
-			state[i].type = "del"
-			state[i].user = user
-		}
+function deleteFromState(user, pos) {
+	if (state[pos].type === "ins" && state[pos].user === user) {
+		state.splice(pos, 1)
+	} else {
+		state[pos].type = "del"
+		state[pos].user = user
 	}
 }
 
@@ -173,7 +171,7 @@ function removeDuplicateDeleteOp() {
 function adjustOps() {
 	for (var i = 1; i < opLog.length; i++) {
 		for (var j = 0; j < i; j++) {
-			opTransform(opLog[j], opLog[i], i)
+			opTransform(opLog[j], opLog[i])
 		}
 	}
 }
@@ -185,7 +183,7 @@ function applyOps() {
 			insertIntoState(op, op.pos)
 		} else if (op.type === "del") {
 			currText = currText.slice(0, op.pos) + currText.slice(op.pos + 1)
-			deleteFromState(op.user, op.pos, op.pos + 1)
+			deleteFromState(op.user, op.pos)
 		}
 	})
 }
