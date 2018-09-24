@@ -124,8 +124,8 @@ function removeDuplicateDeleteOp() {
 		}
 	}
 
-	for (var i = 1; i < opLog.length; i++) {
-		for (var j = 0; j < i; j++) {
+	for (var i = opLog.length - 1; i >= 1; i--) {
+		for (var j = i - 1; j >= 0; j--) {
 			var prevOp = opLog[j]
 			var currOp = opLog[i]
 
@@ -135,10 +135,10 @@ function removeDuplicateDeleteOp() {
 			}
 
 			if (prevOp.type === "ins" &&
-				prevOp.pos < currOp.pos) {
+				prevOp.rel_pos < currOp.rel_pos) {
 				currOp.rel_pos -= 1
 			} else if (prevOp.type === "del" &&
-					   prevOp.pos <= currOp.pos) {
+					   prevOp.rel_pos <= currOp.rel_pos) {
 				currOp.rel_pos += 1
 			}
 		}
@@ -183,7 +183,7 @@ function applyOps() {
 			insertIntoState(op, op.pos)
 		} else if (op.type === "del") {
 			currText = currText.slice(0, op.pos) + currText.slice(op.pos + 1)
-			deleteFromState(op.user, op.pos)
+			deleteFromState(op.user, op.rel_pos)
 		}
 	})
 }
