@@ -55,8 +55,12 @@ function createDiff() {
 }
 
 function opTransform(prevOp, currOp) {
+	if (prevOp.ignore > 0) {
+		prevOp.ignore -= 1
+	}
+
 	if (prevOp.user === currOp.user ||
-		prevOp.ignore) {
+		prevOp.ignore === 0) {
 		return
 	}
 
@@ -135,7 +139,7 @@ function removeDuplicateDeleteOp() {
 			}
 
 			if (prevOp.type === "ins" &&
-				prevOp.rel_pos < currOp.rel_pos) {
+				prevOp.pos < currOp.rel_pos) {
 				currOp.rel_pos -= 1
 			} else if (prevOp.type === "del" &&
 					   prevOp.rel_pos <= currOp.rel_pos) {
@@ -159,7 +163,15 @@ function removeDuplicateDeleteOp() {
 			if (opLog[i].rel_pos === opLog[j].rel_pos &&
 				opLog[i].user != opLog[j].user &&
 				!deleted[opLog[i].rel_pos]) {
-				opLog[i].ignore = true
+
+				opLog[i].ignore = j - i
+
+				for (var k = 0; k < j; k++) {
+					if (opLog[k].ignore + k > j) {
+						opLog[k].ignore -= 1
+					}
+				}
+
 				opLog.splice(j, 1)
 				deleted[opLog[i].rel_pos] = 1
 			}
