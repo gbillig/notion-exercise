@@ -219,13 +219,22 @@ function logKeystroke(event) {
 			}
 		}
 
-		for (var i = event.data.length - 1; i >= 0; i--) {
+		if (event.inputType === "insertLineBreak") {
 			var op = new Object()
 			op.user = user
 			op.type = "ins"
 			op.pos = carotStart
-			op.data = event.data[i]
+			op.data = "\n"
 			opLog.push(op)
+		} else {
+			for (var i = event.data.length - 1; i >= 0; i--) {
+				var op = new Object()
+				op.user = user
+				op.type = "ins"
+				op.pos = carotStart
+				op.data = event.data[i]
+				opLog.push(op)
+			}
 		}
 	} else if (event.inputType === "deleteContentBackward" ||
 			   event.inputType === "deleteContentForward") {
